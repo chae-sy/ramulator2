@@ -1,4 +1,5 @@
 # Ramulator V2.0a
+## Ramulator V2.1 Pre-Release Note
 We have pre-released Ramulator 2.1 as a major overhaul to Ramulator 2.0 in the [v2.1 branch](https://github.com/CMU-SAFARI/ramulator2/tree/v2.1)! We recommend you to switch to Ramulator 2.1 and let us know your thoughts (through the Discussions tab on Github) and/or if you find any new bugs (through issues and PRs). We will soon make v2.1 the default on Github and v2.0a will be archived.
 
 What has changed from Ramulator 2.0:
