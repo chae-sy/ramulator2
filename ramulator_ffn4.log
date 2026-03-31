@@ -1,0 +1,57 @@
+[Ramulator::LoadStoreTrace] [info] Loading trace file ../DRAM-PIM/trace_out_prefill_decode/llama3_8b_wikitext2_prefill128_ffn4.trace ...
+[Ramulator::LoadStoreTrace] [info] Loaded 106954752 lines.
+Frontend:
+  impl: LoadStoreTrace
+
+MemorySystem:
+  impl: GenericDRAM
+  total_num_other_requests: 0
+  total_num_write_requests: 262144
+  total_num_read_requests: 106692608
+  memory_system_cycles: 1333408566
+  DRAM:
+    impl: DDR4
+  AddrMapper:
+    impl: RoBaRaCoCh
+
+
+  Controller:
+    impl: Generic
+    id: Channel 0
+    avg_read_latency_0: 104.887619
+    read_queue_len_avg_0: 34.5001869
+    write_queue_len_0: 7993140630
+    queue_len_0: 54243763151
+    num_other_reqs_0: 0
+    num_write_reqs_0: 1622023
+    read_latency_0: 46449218639
+    priority_queue_len_avg_0: 0.185824469
+    row_hits_0: 80112570
+    priority_queue_len_0: 247779918
+    row_misses_0: 26842105
+    row_conflicts_0: 38
+    read_row_misses_0: 26776157
+    queue_len_avg_0: 40.6805267
+    read_row_conflicts_core_0: 0
+    read_row_hits_0: 79916396
+    write_queue_len_avg_0: 5.99451733
+    read_row_conflicts_0: 22
+    write_row_misses_0: 65948
+    write_row_conflicts_0: 16
+    read_queue_len_0: 46002842603
+    write_row_hits_0: 196174
+    read_row_hits_core_0: 0
+    read_row_misses_core_0: 0
+    num_read_reqs_0: 442847500
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+
+
+    RowPolicy:
+      impl: ClosedRowPolicy
+      num_close_reqs: 26635213
+
+
+
