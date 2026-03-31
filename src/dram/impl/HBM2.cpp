@@ -3,15 +3,15 @@
 
 namespace Ramulator {
 
-class HBM2 : public IDRAM, public Implementation {
+class HBM2 : public IDRAM, public Implementation { // IDRAM 구현체 
   RAMULATOR_REGISTER_IMPLEMENTATION(IDRAM, HBM2, "HBM2", "HBM2 Device Model")
 
   public:
-    inline static const std::map<std::string, Organization> org_presets = {
+    inline static const std::map<std::string, Organization> org_presets = { // 미리 정의된 DRAM 구조
       //   name     density   DQ    Ch Pch  Bg Ba   Ro     Co
       {"HBM2_2Gb",   {2<<10,  128,  {1, 2,  4,  2, 1<<14, 1<<6}}},
       {"HBM2_4Gb",   {4<<10,  128,  {1, 2,  4,  4, 1<<14, 1<<6}}},
-      {"HBM2_8Gb",   {8<<10,  128,  {1, 2,  4,  4, 1<<15, 1<<6}}},
+      {"HBM2_8Gb",   {8<<10,  128,  {1, 2,  4,  4, 1<<15, 1<<6}}}, // density 8Gb, dq=128bit, 1 channel per stack, 2 pseudo channel per channel, 4 bank group per pseudo channel, 4 bank per bank group, 32768 row per bank, 64 column per bank
     };
 
     inline static const std::map<std::string, std::vector<int>> timing_presets = {
@@ -26,8 +26,8 @@ class HBM2 : public IDRAM, public Implementation {
    ***********************************************/   
     const int m_internal_prefetch_size = 2;
 
-    inline static constexpr ImplDef m_levels = {
-      "channel", "pseudochannel", "bankgroup", "bank", "row", "column",    
+    inline static constexpr ImplDef m_levels = { // DRAM 계층 구조의 레벨 정의
+      "channel", "pseudochannel", "bankgroup", "bank", "row", "column",    // HBM2 has an extra pseudo channel level between channel and bankgroup
     };
 
 
@@ -42,7 +42,7 @@ class HBM2 : public IDRAM, public Implementation {
     };
 
     inline static const ImplLUT m_command_scopes = LUT (
-      m_commands, m_levels, {
+      m_commands, m_levels, { // 각 명령어가 DRAM의 어느 레벨에 영향을 미치는지 정의
         {"ACT",   "row"},
         {"PRE",   "bank"},    {"PREA",   "channel"},
         {"RD",    "column"},  {"WR",     "column"}, {"RDA",   "column"}, {"WRA",   "column"},
@@ -53,7 +53,7 @@ class HBM2 : public IDRAM, public Implementation {
     inline static const ImplLUT m_command_meta = LUT<DRAMCommandMeta> (
       m_commands, {
                 // open?   close?   access?  refresh?
-        {"ACT",   {true,   false,   false,   false}},
+        {"ACT",   {true,   false,   false,   false}}, // ACT 명령어는 row를 열지만 닫지는 않고, 데이터 접근이나 리프레시도 하지 않음
         {"PRE",   {false,  true,    false,   false}},
         {"PREA",  {false,  true,    false,   false}},
         {"RD",    {false,  false,   true,    false}},
@@ -100,7 +100,7 @@ class HBM2 : public IDRAM, public Implementation {
     };
 
     inline static const ImplLUT m_init_states = LUT (
-      m_levels, m_states, {
+      m_levels, m_states, { // 시작 상태 
         {"channel",       "N/A"}, 
         {"pseudochannel", "N/A"}, 
         {"bankgroup",     "N/A"},
@@ -111,38 +111,38 @@ class HBM2 : public IDRAM, public Implementation {
     );
 
   public:
-    struct Node : public DRAMNodeBase<HBM2> {
+    struct Node : public DRAMNodeBase<HBM2> { // DRAM의 각 노드 (채널, 뱅크그룹, 뱅크, 로우 등)를 나타내는 구조체. DRAMNodeBase를 상속받아 구현
       Node(HBM2* dram, Node* parent, int level, int id) : DRAMNodeBase<HBM2>(dram, parent, level, id) {};
     };
-    std::vector<Node*> m_channels;
+    std::vector<Node*> m_channels; // channel list
     
-    FuncMatrix<ActionFunc_t<Node>>  m_actions;
-    FuncMatrix<PreqFunc_t<Node>>    m_preqs;
-    FuncMatrix<RowhitFunc_t<Node>>  m_rowhits;
-    FuncMatrix<RowopenFunc_t<Node>> m_rowopens;
+    FuncMatrix<ActionFunc_t<Node>>  m_actions; // command에 따른 DRAM 상태 변화 정의 (예: ACT 명령어는 row를 열고, PRE 명령어는 row를 닫음)
+    FuncMatrix<PreqFunc_t<Node>>    m_preqs; // pre-command 정의 (예: ACT 명령어를 발행하기 전에 같은 bank의 이전 row가 열려있으면 PRE 명령어 선행 필요)
+    FuncMatrix<RowhitFunc_t<Node>>  m_rowhits; // row hit 여부 정의 (예: RD 명령어가 발행될 때, 해당 row가 이미 열려있는지 확인)
+    FuncMatrix<RowopenFunc_t<Node>> m_rowopens; // row open 여부 정의 (예: ACT 명령어가 발행될 때, 해당 row가 이미 열려있는지 확인)
 
 
   public:
     void tick() override {
-      m_clk++;
+      m_clk++; // 클럭 사이클 증가
     };
 
     void init() override {
-      RAMULATOR_DECLARE_SPECS();
-      set_organization();
-      set_timing_vals();
+      RAMULATOR_DECLARE_SPECS();  // DRAM의 구조, 명령어, 타이밍, 상태 등 사양을 초기화하는 매크로. 각 DRAM 모델에서 이 매크로를 호출하여 사양을 설정
+      set_organization(); // DRAM의 조직 설정 (예: 채널 수, 뱅크 수, 로우 수 등)
+      set_timing_vals(); // DRAM의 타이밍 값 설정 (예: nRCD, nCL 등)
 
-      set_actions();
-      set_preqs();
-      set_rowhits();
-      set_rowopens();
+      set_actions(); // 각 명령어에 따른 DRAM 상태 변화 정의
+      set_preqs(); // 각 명령어에 따른 pre-command 정의
+      set_rowhits(); // 각 명령어에 따른 row hit 여부 정의
+      set_rowopens(); // 각 명령어에 따른 row open 여부 정의
       
-      create_nodes();
+      create_nodes(); // DRAM의 각 노드 (채널, 뱅크그룹, 뱅크, 로우 등)를 생성하여 트리 구조로 구성
     };
 
     void issue_command(int command, const AddrVec_t& addr_vec) override {
-      int channel_id = addr_vec[m_levels["channel"]];
-      m_channels[channel_id]->update_timing(command, addr_vec, m_clk);
+      int channel_id = addr_vec[m_levels["channel"]]; // 이 request가 어느 channel에 속하는지 확인 
+      m_channels[channel_id]->update_timing(command, addr_vec, m_clk); // 해당 request는 특정 channel에서만 처리, 다른 channel에 영향 x
       m_channels[channel_id]->update_states(command, addr_vec, m_clk);
     };
 
@@ -167,7 +167,7 @@ class HBM2 : public IDRAM, public Implementation {
     };
 
   private:
-    void set_organization() {
+    void set_organization() { // YAML에서 org 읽어오기
       // Channel width
       m_channel_width = param_group("org").param<int>("channel_width").default_val(64);
 
@@ -200,7 +200,7 @@ class HBM2 : public IDRAM, public Implementation {
       }
 
       // Sanity check: is the calculated channel density the same as the provided one?
-      size_t _density = size_t(m_organization.count[m_levels["pseudochannel"]]) *
+      size_t _density = size_t(m_organization.count[m_levels["pseudochannel"]]) * // 실제 메모리 크기 계산
                         size_t(m_organization.count[m_levels["bankgroup"]]) *
                         size_t(m_organization.count[m_levels["bank"]]) *
                         size_t(m_organization.count[m_levels["row"]]) *

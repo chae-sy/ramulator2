@@ -12,16 +12,16 @@
 
 namespace Ramulator {
 
-class IDRAM : public Clocked<IDRAM> {
-  RAMULATOR_REGISTER_INTERFACE(IDRAM, "DRAM", "DRAM Device Model Interface")
+class IDRAM : public Clocked<IDRAM> { // clock cycle 기반 동작
+  RAMULATOR_REGISTER_INTERFACE(IDRAM, "DRAM", "DRAM Device Model Interface") // interface 등록
 
   /************************************************
    *                Organization
    ***********************************************/   
   public:
     int m_internal_prefetch_size = -1;  // Internal prefetch (xn) size: How many columns are fetched into the I/O? e.g., DDR4 has 8n prefetch.
-    SpecDef m_levels;                   // Definition (i.e., names and ids) of the levels in the hierarchy
-    Organization m_organization;        // The organization of the device (density, dq, levels)
+    SpecDef m_levels;                   // Definition (i.e., names and ids) of the levels in the hierarchy (channel, rank, bank, row, column, etc.)
+    Organization m_organization;        // The organization of the device (density, dq, levels) bank 개수 row 개수 column 개수 density 등
     int m_channel_width = -1;           // Channel width (should be set by the implementation's config)
 
 
@@ -29,21 +29,21 @@ class IDRAM : public Clocked<IDRAM> {
    *             Requests & Commands
    ***********************************************/
   public:
-    SpecDef m_commands;                                   // The definition of all DRAM commands
-    SpecLUT<Level_t> m_command_scopes{m_commands};        // A LUT of the scopes (i.e., at which organization level) of the DRAM commands
-    SpecLUT<DRAMCommandMeta> m_command_meta{m_commands};  // A LUT to check which DRAM command opens a row 
+    SpecDef m_commands;                                   // The definition of all DRAM commands (ACT, PRE, RD, WR, etc.)
+    SpecLUT<Level_t> m_command_scopes{m_commands};        // A LUT of the scopes (i.e., at which organization level) of the DRAM commands e.g., ACT -> row, PRE -> bank, RD, WR -> column
+    SpecLUT<DRAMCommandMeta> m_command_meta{m_commands};  // A LUT to check which DRAM command opens a row. row open? row close? read? write? refresh? 
 
-    SpecDef m_requests;                                     // The definition of all requests supported
-    SpecLUT<Command_t> m_request_translations{m_requests};  // A LUT of the final DRAM commands needed by every request
+    SpecDef m_requests;                                     // The definition of all requests supported 상위 요청 (read/write)
+    SpecLUT<Command_t> m_request_translations{m_requests};  // A LUT of the final DRAM commands needed by every request. request -> command 매핑 e.g., read -> RD
 
     // TODO: make this a priority queue
-    std::vector<FutureAction> m_future_actions;  // A vector of requests that requires future state changes
+    std::vector<FutureAction> m_future_actions;  // A vector of requests that requires future state changes. 미래 이벤트 큐 (delayed action, refresh, timing event, etc.)
 
   /************************************************
    *                Node States
    ***********************************************/
   public:
-    SpecDef m_states;
+    SpecDef m_states; // 각 노드 상태 e.g., open/closed for row, busy/idle for bank, etc.
     SpecLUT<State_t> m_init_states{m_states};
 
 
@@ -51,10 +51,10 @@ class IDRAM : public Clocked<IDRAM> {
    *                   Timing
    ***********************************************/
   public:
-    SpecDef m_timings;                      // The names of the timing constraints
+    SpecDef m_timings;                      // The names of the timing constraints. timing 이름 + 값
     SpecLUT<int> m_timing_vals{m_timings};  // The LUT of the values for each timing constraints
 
-    TimingCons m_timing_cons;           // The actual timing constraints used by Ramulator's DRAM model
+    TimingCons m_timing_cons;           // The actual timing constraints used by Ramulator's DRAM model. 실제 timing constraint graph
 
     Clk_t m_read_latency = -1;          // Number of cycles needed between issuing RD command and receiving data.
 
